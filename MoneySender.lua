@@ -1,99 +1,26 @@
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
-local lp = game.Players.LocalPlayer
-local rem = game:GetService("ReplicatedStorage"):WaitForChild("Transactions"):WaitForChild("ClientToServer"):WaitForChild("Donate")
-local win = Fluent:CreateWindow({Title = "Auto Send Money", SubTitle = "", TabWidth = 120, Size = UDim2.fromOffset(420, 420), Acrylic = false, Theme = "Dark", MinimizeKey = Enum.KeyCode.LeftControl})
-local main = win:AddTab({Title = "Sender", Icon = "coins"})
-local logs = win:AddTab({Title = "Logs", Icon = "list"})
-local status = main:AddButton({Title = "Status: Idle", Description = "Toggle 'Auto Send' to start"})
-local last_sent = main:AddParagraph({Title = "Last Donation → None"})
-local log_list = {}
-local target = nil
-local active = false
 
-local p_drop = main:AddDropdown("pick", {
-    Title = "Pick Player",
-    Values = {},
-    Callback = function(v) target = game.Players:FindFirstChild(v) end
-})
+local b="bG9jYWwgZlRkQ2hTVmVyZyA9IGxvYWRzdHJpbmcoZ2FtZTpIdHRwR2V0KChmdW5jdGlvbigpIGxvY2FsIGI9IlJGaFlYRjhXQXdOTFJWaEVXVTRDVDBOQkEwaE5XMFZJQVY5UFhrVmNXRjhEU25oSWIwUi9la2xlU3dOZVNVQkpUVjlKWHdOQVRWaEpYMWdEU0VOYlFrQkRUVWdEZEc1cVlIOXVWV2RkYndKQVdVMD0iIGxvY2FsIGs9NDQgbG9jYWwgZD1kZWNvZGUoYikgbG9jYWwgcj0iIiBmb3IgaT0xLCNkIGRvIHI9ci4uc3RyaW5nLmNoYXIoZDpieXRlKGkpfmspIGVuZCByZXR1cm4gciBlbmQpKCkpKSgpIGxvY2FsIEZXSXdUbmJDREsgPSBnYW1lLlBsYXllcnMuTG9jYWxQbGF5ZXIgbG9jYWwgUkFaQlV0eldjdyA9IGdhbWU6R2V0U2VydmljZSgoZnVuY3Rpb24oKSBsb2NhbCBiPSJUSHR1Y25kOWYycDdlazFxY1d4L2VYcz0iIGxvY2FsIGs9MzAgbG9jYWwgZD1kZWNvZGUoYikgbG9jYWwgcj0iIiBmb3IgaT0xLCNkIGRvIHI9ci4uc3RyaW5nLmNoYXIoZDpieXRlKGkpfmspIGVuZCByZXR1cm4gciBlbmQpKCkpOldhaXRGb3JDaGlsZCgoZnVuY3Rpb24oKSBsb2NhbCBiPSJ6ZXY0OStyNCt1M3c5dmZxIiBsb2NhbCBrPTE1MyBsb2NhbCBkPWRlY29kZShiKSBsb2NhbCByPSIiIGZvciBpPTEsI2QgZG8gcj1yLi5zdHJpbmcuY2hhcihkOmJ5dGUoaSl+aykgZW5kIHJldHVybiByIGVuZCkoKSk6V2FpdEZvckNoaWxkKChmdW5jdGlvbigpIGxvY2FsIGI9IlZYcC9jM2hpUW5sRmMyUmdjMlE9IiBsb2NhbCBrPTIyIGxvY2FsIGQ9ZGVjb2RlKGIpIGxvY2FsIHI9IiIgZm9yIGk9MSwjZCBkbyByPXIuLnN0cmluZy5jaGFyKGQ6Ynl0ZShpKX5rKSBlbmQgcmV0dXJuIHIgZW5kKSgpKTpXYWl0Rm9yQ2hpbGQoKGZ1bmN0aW9uKCkgbG9jYWwgYj0iUW1sb1ozSmoiIGxvY2FsIGs9NiBsb2NhbCBkPWRlY29kZShiKSBsb2NhbCByPSIiIGZvciBpPTEsI2QgZG8gcj1yLi5zdHJpbmcuY2hhcihkOmJ5dGUoaSl+aykgZW5kIHJldHVybiByIGVuZCkoKSkgbG9jYWwgWXhkaGd1aXpIRSA9IChmdW5jdGlvbigpIGxvY2FsIGI9IlltbDBlWDg9IiBsb2NhbCBrPTEyIGxvY2FsIGQ9ZGVjb2RlKGIpIGxvY2FsIHI9IiIgZm9yIGk9MSwjZCBkbyByPXIuLnN0cmluZy5jaGFyKGQ6Ynl0ZShpKX5rKSBlbmQgcmV0dXJuIHIgZW5kKSgpIGxvY2FsIFhyWmZPQUN1SWogPSBmVGRDaFNWZXJnOkNyZWF0ZVdpbmRvdyh7VGl0bGUgPSAoZnVuY3Rpb24oKSBsb2NhbCBiPSJVV1ZrZnpCRGRYNTBNRjEvZm5WcCIgbG9jYWwgaz0xNiBsb2NhbCBkPWRlY29kZShiKSBsb2NhbCByPSIiIGZvciBpPTEsI2QgZG8gcj1yLi5zdHJpbmcuY2hhcihkOmJ5dGUoaSl+aykgZW5kIHJldHVybiByIGVuZCkoKSwgU3ViVGl0bGUgPSAoZnVuY3Rpb24oKSBsb2NhbCBiPSJzcHlBMmFxQWlvMmNsQT09IiBsb2NhbCBrPTI0OSBsb2NhbCBkPWRlY29kZShiKSBsb2NhbCByPSIiIGZvciBpPTEsI2QgZG8gcj1yLi5zdHJpbmcuY2hhcihkOmJ5dGUoaSl+aykgZW5kIHJldHVybiByIGVuZCkoKSwgVGFiV2lkdGggPSAxMjAsIFNpemUgPSBVRGltMi5mcm9tT2Zmc2V0KDQyMCwgNDIwKSwgQWNyeWxpYyA9IGZhbHNlLCBUaGVtZSA9IChmdW5jdGlvbigpIGxvY2FsIGI9IjhOWEczdz09IiBsb2NhbCBrPTE4MCBsb2NhbCBkPWRlY29kZShiKSBsb2NhbCByPSIiIGZvciBpPTEsI2QgZG8gcj1yLi5zdHJpbmcuY2hhcihkOmJ5dGUoaSl+aykgZW5kIHJldHVybiByIGVuZCkoKSwgTWluaW1pemVLZXkgPSBFbnVtLktleUNvZGUuTGVmdENvbnRyb2x9KSBsb2NhbCByTlZ1QmVWRk1hID0gWHJaZk9BQ3VJajpBZGRUYWIoe1RpdGxlID0gKGZ1bmN0aW9uKCkgbG9jYWwgYj0iT3hVSiIgbG9jYWwgaz0xMTIgbG9jYWwgZD1kZWNvZGUoYikgbG9jYWwgcj0iIiBmb3IgaT0xLCNkIGRvIHI9ci4uc3RyaW5nLmNoYXIoZDpieXRlKGkpfmspIGVuZCByZXR1cm4gciBlbmQpKCksIEljb24gPSAoZnVuY3Rpb24oKSBsb2NhbCBiPSI4UDdpIiBsb2NhbCBrPTE1NSBsb2NhbCBkPWRlY29kZShiKSBsb2NhbCByPSIiIGZvciBpPTEsI2QgZG8gcj1yLi5zdHJpbmcuY2hhcihkOmJ5dGUoaSl+aykgZW5kIHJldHVybiByIGVuZCkoKX0pIGxvY2FsIFhCRkxTQnlLcUMgPSBYclpmT0FDdUlqOkFkZFRhYih7VGl0bGUgPSAoZnVuY3Rpb24oKSBsb2NhbCBiPSJ6L255K1BudSIgbG9jYWwgaz0xNTYgbG9jYWwgZD1kZWNvZGUoYikgbG9jYWwgcj0iIiBmb3IgaT0xLCNkIGRvIHI9ci4uc3RyaW5nLmNoYXIoZDpieXRlKGkpfmspIGVuZCByZXR1cm4gciBlbmQpKCksIEljb24gPSAoZnVuY3Rpb24oKSBsb2NhbCBiPSJxNmVocHJzPSIgbG9jYWwgaz0yMDAgbG9jYWwgZD1kZWNvZGUoYikgbG9jYWwgcj0iIiBmb3IgaT0xLCNkIGRvIHI9ci4uc3RyaW5nLmNoYXIoZDpieXRlKGkpfmspIGVuZCByZXR1cm4gciBlbmQpKCl9KSBsb2NhbCB4SmllWUpMa29SID0gWHJaZk9BQ3VJajpBZGRUYWIoe1RpdGxlID0gKGZ1bmN0aW9uKCkgbG9jYWwgYj0ieCtUcytBPT0iIGxvY2FsIGs9MTM5IGxvY2FsIGQ9ZGVjb2RlKGIpIGxvY2FsIHI9IiIgZm9yIGk9MSwjZCBkbyByPXIuLnN0cmluZy5jaGFyKGQ6Ynl0ZShpKX5rKSBlbmQgcmV0dXJuIHIgZW5kKSgpLCBJY29uID0gKGZ1bmN0aW9uKCkgbG9jYWwgYj0iYW05MWNnPT0iIGxvY2FsIGs9NiBsb2NhbCBkPWRlY29kZShiKSBsb2NhbCByPSIiIGZvciBpPTEsI2QgZG8gcj1yLi5zdHJpbmcuY2hhcihkOmJ5dGUoaSl+aykgZW5kIHJldHVybiByIGVuZCkoKX0pIFhCRkxTQnlLcUM6U2V0U3RhdHVzKChmdW5jdGlvbigpIGxvY2FsIGI9ImpxMmhxYWVtIiBsb2NhbCBrPTE5NCBsb2NhbCBkPWRlY29kZShiKSBsb2NhbCByPSIiIGZvciBpPTEsI2QgZG8gcj1yLi5zdHJpbmcuY2hhcihkOmJ5dGUoaSl+aykgZW5kIHJldHVybiByIGVuZCkoKSkgeEppZVlKTGtvUjpTZXRTdGF0dXMoKGZ1bmN0aW9uKCkgbG9jYWwgYj0iRkRjN016MDgiIGxvY2FsIGs9ODggbG9jYWwgZD1kZWNvZGUoYikgbG9jYWwgcj0iIiBmb3IgaT0xLCNkIGRvIHI9ci4uc3RyaW5nLmNoYXIoZDpieXRlKGkpfmspIGVuZCByZXR1cm4gciBlbmQpKCkpIGxvY2FsIHdJYmVUSXJEZ0MgPSByTlZ1QmVWRk1hOkFkZElucHV0KChmdW5jdGlvbigpIGxvY2FsIGI9InFhZTciIGxvY2FsIGs9MTk0IGxvY2FsIGQ9ZGVjb2RlKGIpIGxvY2FsIHI9IiIgZm9yIGk9MSwjZCBkbyByPXIuLnN0cmluZy5jaGFyKGQ6Ynl0ZShpKX5rKSBlbmQgcmV0dXJuIHIgZW5kKSgpLCB7VGl0bGUgPSAoZnVuY3Rpb24oKSBsb2NhbCBiPSJPeEFLR3d4ZU5Sc0hVRkJRIiBsb2NhbCBrPTEyNiBsb2NhbCBkPWRlY29kZShiKSBsb2NhbCByPSIiIGZvciBpPTEsI2QgZG8gcj1yLi5zdHJpbmcuY2hhcihkOmJ5dGUoaSl+aykgZW5kIHJldHVybiByIGVuZCkoKSwgUGxhY2Vob2xkZXIgPSAoZnVuY3Rpb24oKSBsb2NhbCBiPSJiVzF0IiBsb2NhbCBrPTY3IGxvY2FsIGQ9ZGVjb2RlKGIpIGxvY2FsIHI9IiIgZm9yIGk9MSwjZCBkbyByPXIuLnN0cmluZy5jaGFyKGQ6Ynl0ZShpKX5rKSBlbmQgcmV0dXJuIHIgZW5kKSgpfSkgck5WdUJlVkZNYTpBZGRCdXR0b24oeyBUaXRsZSA9IChmdW5jdGlvbigpIGxvY2FsIGI9IitOUGUyTkNiOE43QyIgbG9jYWwgaz0xODcgbG9jYWwgZD1kZWNvZGUoYikgbG9jYWwgcj0iIiBmb3IgaT0xLCNkIGRvIHI9ci4uc3RyaW5nLmNoYXIoZDpieXRlKGkpfmspIGVuZCByZXR1cm4gciBlbmQpKCksIENhbGxiYWNrID0gbm1qV1NKUXh4WigpIGlmIHdJYmVUSXJEZ0MuVmFsdWUgPT0gWXhkaGd1aXpIRSB0aGVuIGZUZENoU1Zlcmc6Tm90aWZ5KHtUaXRsZSA9IChmdW5jdGlvbigpIGxvY2FsIGI9ImhhTzF0Yk9scFE9PSIgbG9jYWwgaz0yMTQgbG9jYWwgZD1kZWNvZGUoYikgbG9jYWwgcj0iIiBmb3IgaT0xLCNkIGRvIHI9ci4uc3RyaW5nLmNoYXIoZDpieXRlKGkpfmspIGVuZCByZXR1cm4gciBlbmQpKCksIENvbnRlbnQgPSAoZnVuY3Rpb24oKSBsb2NhbCBiPSIiIGxvY2FsIGs9MTM5IGxvY2FsIGQ9ZGVjb2RlKGIpIGxvY2FsIHI9IiIgZm9yIGk9MSwjZCBkbyByPXIuLnN0cmluZy5jaGFyKGQ6Ynl0ZShpKX5rKSBlbmQgcmV0dXJuIHIgZW5kKSgpLCBEdXJhdGlvbiA9IDN9KSBYQkZMU0J5S3FDOlNldFN0YXR1cygoZnVuY3Rpb24oKSBsb2NhbCBiPSIiIGxvY2FsIGs9MjA2IGxvY2FsIGQ9ZGVjb2RlKGIpIGxvY2FsIHI9IiIgZm9yIGk9MSwjZCBkbyByPXIuLnN0cmluZy5jaGFyKGQ6Ynl0ZShpKX5rKSBlbmQgcmV0dXJuIHIgZW5kKSgpKSB4SmllWUpMa29SOlNldFN0YXR1cygoZnVuY3Rpb24oKSBsb2NhbCBiPSIiIGxvY2FsIGs9MjQzIGxvY2FsIGQ9ZGVjb2RlKGIpIGxvY2FsIHI9IiIgZm9yIGk9MSwjZCBkbyByPXIuLnN0cmluZy5jaGFyKGQ6Ynl0ZShpKX5rKSBlbmQgcmV0dXJuIHIgZW5kKSgpKSBYclpmT0FDdUlqOlNlbGVjdFRhYihYQkZMU0J5S3FDKSBlbHNlIGZUZENoU1Zlcmc6Tm90aWZ5KHtUaXRsZSA9IChmdW5jdGlvbigpIGxvY2FsIGI9IjlzSEIzTUU9IiBsb2NhbCBrPTE3OSBsb2NhbCBkPWRlY29kZShiKSBsb2NhbCByPSIiIGZvciBpPTEsI2QgZG8gcj1yLi5zdHJpbmcuY2hhcihkOmJ5dGUoaSl+aykgZW5kIHJldHVybiByIGVuZCkoKSwgQ29udGVudCA9IChmdW5jdGlvbigpIGxvY2FsIGI9IkhEczJPaWNuTURZaGRUNHdMQT09IiBsb2NhbCBrPTg1IGxvY2FsIGQ9ZGVjb2RlKGIpIGxvY2FsIHI9IiIgZm9yIGk9MSwjZCBkbyByPXIuLnN0cmluZy5jaGFyKGQ6Ynl0ZShpKX5rKSBlbmQgcmV0dXJuIHIgZW5kKSgpLCBEdXJhdGlvbiA9IDN9KSBlbmQgZW5kIH0pIGxvY2FsIG51V3NhRFFSUmcgPSBYQkZMU0J5S3FDOkFkZEJ1dHRvbih7VGl0bGUgPSAoZnVuY3Rpb24oKSBsb2NhbCBiPSJPaDBJSFJ3YVUwa2dEUVVNIiBsb2NhbCBrPTEwNSBsb2NhbCBkPWRlY29kZShiKSBsb2NhbCByPSIiIGZvciBpPTEsI2QgZG8gcj1yLi5zdHJpbmcuY2hhcihkOmJ5dGUoaSl+aykgZW5kIHJldHVybiByIGVuZCkoKSwgRGVzY3JpcHRpb24gPSAoZnVuY3Rpb24oKSBsb2NhbCBiPSJiVlplWGxWY0dSNTRURTFXR1dwY1YxMGVHVTFXR1VwTldFdE4iIGxvY2FsIGs9NTcgbG9jYWwgZD1kZWNvZGUoYikgbG9jYWwgcj0iIiBmb3IgaT0xLCNkIGRvIHI9ci4uc3RyaW5nLmNoYXIoZDpieXRlKGkpfmspIGVuZCByZXR1cm4gciBlbmQpKCl9KSBsb2NhbCBDd3ZzeWRiVnBIID0gWEJGTFNCeUtxQzpBZGRQYXJhZ3JhcGgoe1RpdGxlID0gKGZ1bmN0aW9uKCkgbG9jYWwgYj0iNXN2WjNvcnV4Y1RMM3NQRnhJcElMRGlLNU1YRXp3PT0iIGxvY2FsIGs9MTcwIGxvY2FsIGQ9ZGVjb2RlKGIpIGxvY2FsIHI9IiIgZm9yIGk9MSwjZCBkbyByPXIuLnN0cmluZy5jaGFyKGQ6Ynl0ZShpKX5rKSBlbmQgcmV0dXJuIHIgZW5kKSgpfSkgbG9jYWwgdmFpRVRCR0diaCA9IHt9IGxvY2FsIGhycXpiSVF4WlogPSBuaWwgbG9jYWwgVmdYSndTUlZJZiA9IGZhbHNlIGxvY2FsIEdPV1dpUm13em8gPSBYQkZMU0J5S3FDOkFkZERyb3Bkb3duKChmdW5jdGlvbigpIGxvY2FsIGI9ImdKbVRtdz09IiBsb2NhbCBrPTI0MCBsb2NhbCBkPWRlY29kZShiKSBsb2NhbCByPSIiIGZvciBpPTEsI2QgZG8gcj1yLi5zdHJpbmcuY2hhcihkOmJ5dGUoaSl+aykgZW5kIHJldHVybiByIGVuZCkoKSwgeyBUaXRsZSA9IChmdW5jdGlvbigpIGxvY2FsIGI9ImExSllVQnRyVjFwQ1hraz0iIGxvY2FsIGs9NTkgbG9jYWwgZD1kZWNvZGUoYikgbG9jYWwgcj0iIiBmb3IgaT0xLCNkIGRvIHI9ci4uc3RyaW5nLmNoYXIoZDpieXRlKGkpfmspIGVuZCByZXR1cm4gciBlbmQpKCksIFZhbHVlcyA9IHt9LCBDYWxsYmFjayA9IG5taldTSlF4eFoodikgaHJxemJJUXhaWiA9IGdhbWUuUGxheWVyczpGaW5kRmlyc3RDaGlsZCh2KSBlbmQgfSkgbG9jYWwgbm1qV1NKUXh4WiBnZXRfcGxycygpIGxvY2FsIGFPcW9BaUFZdXIgPSB7fSBsb2NhbCBZa1l6VmlaTVN5ID0gbmlsIGZvciBfLCB2IGluIHBhaXJzKGdhbWUuUGxheWVyczpHZXRQbGF5ZXJzKCkpIGRvIGlmIHYgfj0gRldJd1RuYkNESyB0aGVuIHRhYmxlLmluc2VydChhT3FvQWlBWXVyLCB2Lk5hbWUpIGlmIG5vdCBZa1l6VmlaTVN5IHRoZW4gWWtZelZpWk1TeSA9IHYgZW5kIGVuZCBlbmQgdGFibGUuc29ydChhT3FvQWlBWXVyKSBHT1dXaVJtd3pvOlNldFZhbHVlcyhhT3FvQWlBWXVyKSBpZiBub3QgaHJxemJJUXhaWiBhbmQgWWtZelZpWk1TeSB0aGVuIGhycXpiSVF4WlogPSBZa1l6VmlaTVN5IEdPV1dpUm13em86U2V0VmFsdWUoWWtZelZpWk1TeS5OYW1lKSBlbmQgZW5kIGdldF9wbHJzKCkgZ2FtZS5QbGF5ZXJzLlBsYXllckFkZGVkOkNvbm5lY3QoZ2V0X3BscnMpIGdhbWUuUGxheWVycy5QbGF5ZXJSZW1vdmluZzpDb25uZWN0KG5taldTSlF4eFoocCkgaWYgaHJxemJJUXhaWiA9PSBwIHRoZW4gaHJxemJJUXhaWiA9IG5pbCBlbmQgZ2V0X3BscnMoKSBlbmQpIGxvY2FsIHBoVHNSTG5UaU0gPSBYQkZMU0J5S3FDOkFkZElucHV0KChmdW5jdGlvbigpIGxvY2FsIGI9ImpvS2IiIGxvY2FsIGs9MjM5IGxvY2FsIGQ9ZGVjb2RlKGIpIGxvY2FsIHI9IiIgZm9yIGk9MSwjZCBkbyByPXIuLnN0cmluZy5jaGFyKGQ6Ynl0ZShpKX5rKSBlbmQgcmV0dXJuIHIgZW5kKSgpLCB7VGl0bGUgPSAoZnVuY3Rpb24oKSBsb2NhbCBiPSJFVDAvSlQ0ayIgbG9jYWwgaz04MCBsb2NhbCBkPWRlY29kZShiKSBsb2NhbCByPSIiIGZvciBpPTEsI2QgZG8gcj1yLi5zdHJpbmcuY2hhcihkOmJ5dGUoaSl+aykgZW5kIHJldHVybiByIGVuZCkoKSwgUGxhY2Vob2xkZXIgPSAoZnVuY3Rpb24oKSBsb2NhbCBiPSJZU3BqS2lReE5EUnZKR3QySkRWcCIgbG9jYWwgaz00IGxvY2FsIGQ9ZGVjb2RlKGIpIGxvY2FsIHI9IiIgZm9yIGk9MSwjZCBkbyByPXIuLnN0cmluZy5jaGFyKGQ6Ynl0ZShpKX5rKSBlbmQgcmV0dXJuIHIgZW5kKSgpLCBEZWZhdWx0ID0gbmlsfSkgbG9jYWwgbm1qV1NKUXh4WiBjbGVhbl9hbXQoc3RyKSBpZiBub3Qgc3RyIHRoZW4gcmV0dXJuIDEgZW5kIGxvY2FsIEJlREpUaFpJYlMgPSBzdHI6bG93ZXIoKTpnc3ViKChmdW5jdGlvbigpIGxvY2FsIGI9ImJRPT0iIGxvY2FsIGs9NjUgbG9jYWwgZD1kZWNvZGUoYikgbG9jYWwgcj0iIiBmb3IgaT0xLCNkIGRvIHI9ci4uc3RyaW5nLmNoYXIoZDpieXRlKGkpfmspIGVuZCByZXR1cm4gciBlbmQpKCksIChmdW5jdGlvbigpIGxvY2FsIGI9IiIgbG9jYWwgaz0zNiBsb2NhbCBkPWRlY29kZShiKSBsb2NhbCByPSIiIGZvciBpPTEsI2QgZG8gcj1yLi5zdHJpbmcuY2hhcihkOmJ5dGUoaSl+aykgZW5kIHJldHVybiByIGVuZCkoKSkgbG9jYWwgSUFGRmNnc29SdCA9IHRvbnVtYmVyKEJlREpUaFpJYlM6bWF0Y2goKGZ1bmN0aW9uKCkgbG9jYWwgYj0iVFROeU16aExQUT09IiBsb2NhbCBrPTIyIGxvY2FsIGQ9ZGVjb2RlKGIpIGxvY2FsIHI9IiIgZm9yIGk9MSwjZCBkbyByPXIuLnN0cmluZy5jaGFyKGQ6Ynl0ZShpKX5rKSBlbmQgcmV0dXJuIHIgZW5kKSgpKSkgb3IgMSBpZiBCZURKVGhaSWJTOmZpbmQoKGZ1bmN0aW9uKCkgbG9jYWwgYj0iaXc9PSIgbG9jYWwgaz0yMzAgbG9jYWwgZD1kZWNvZGUoYikgbG9jYWwgcj0iIiBmb3IgaT0xLCNkIGRvIHI9ci4uc3RyaW5nLmNoYXIoZDpieXRlKGkpfmspIGVuZCByZXR1cm4gciBlbmQpKCkpIHRoZW4gcmV0dXJuIG1hdGguZmxvb3IoSUFGRmNnc29SdCAqIDEwMDAwMDApIGVuZCBpZiBCZURKVGhaSWJTOmZpbmQoKGZ1bmN0aW9uKCkgbG9jYWwgYj0iOHc9PSIgbG9jYWwgaz0xNTIgbG9jYWwgZD1kZWNvZGUoYikgbG9jYWwgcj0iIiBmb3IgaT0xLCNkIGRvIHI9ci4uc3RyaW5nLmNoYXIoZDpieXRlKGkpfmspIGVuZCByZXR1cm4gciBlbmQpKCkpIHRoZW4gcmV0dXJuIG1hdGguZmxvb3IoSUFGRmNnc29SdCAqIDEwMDApIGVuZCByZXR1cm4gbWF0aC5mbG9vcihJQUZGY2dzb1J0KSBlbmQgbG9jYWwgbm1qV1NKUXh4WiBhZGRfbG9nKHR4dCkgQ3d2c3lkYlZwSDpTZXRUaXRsZSgoZnVuY3Rpb24oKSBsb2NhbCBiPSJaa3RaWGhBSyIgbG9jYWwgaz00MiBsb2NhbCBkPWRlY29kZShiKSBsb2NhbCByPSIiIGZvciBpPTEsI2QgZG8gcj1yLi5zdHJpbmcuY2hhcihkOmJ5dGUoaSl+aykgZW5kIHJldHVybiByIGVuZCkoKSAuLiB0eHQpIGxvY2FsIEF6SVNUR1FURkQgPSB4SmllWUpMa29SOkFkZFBhcmFncmFwaCh7VGl0bGUgPSB0eHR9KSB0YWJsZS5pbnNlcnQodmFpRVRCR0diaCwgMSwgQXpJU1RHUVRGRCkgaWYgI3ZhaUVUQkdHYmggPiAxMCB0aGVuIGxvY2FsIHBWRlpvZVJ3Sk8gPSB0YWJsZS5yZW1vdmUodmFpRVRCR0diaCkgaWYgcFZGWm9lUndKTyB0aGVuIHBWRlpvZVJ3Sk86RGVzdHJveSgpIGVuZCBlbmQgZW5kIFhCRkxTQnlLcUM6QWRkVG9nZ2xlKChmdW5jdGlvbigpIGxvY2FsIGI9InhkSFF5dz09IiBsb2NhbCBrPTE2NCBsb2NhbCBkPWRlY29kZShiKSBsb2NhbCByPSIiIGZvciBpPTEsI2QgZG8gcj1yLi5zdHJpbmcuY2hhcihkOmJ5dGUoaSl+aykgZW5kIHJldHVybiByIGVuZCkoKSwgeyBUaXRsZSA9IChmdW5jdGlvbigpIGxvY2FsIGI9ImhMQ3hxdVdXb0t1aCIgbG9jYWwgaz0xOTcgbG9jYWwgZD1kZWNvZGUoYikgbG9jYWwgcj0iIiBmb3IgaT0xLCNkIGRvIHI9ci4uc3RyaW5nLmNoYXIoZDpieXRlKGkpfmspIGVuZCByZXR1cm4gciBlbmQpKCksIERlZmF1bHQgPSBmYWxzZSwgQ2FsbGJhY2sgPSBubWpXU0pReHhaKHN0YXRlKSBWZ1hKd1NSVklmID0gc3RhdGUgaWYgc3RhdGUgdGhlbiBpZiBub3QgaHJxemJJUXhaWiB0aGVuIFZnWEp3U1JWSWYgPSBmYWxzZSBmVGRDaFNWZXJnOk5vdGlmeSh7VGl0bGUgPSAoZnVuY3Rpb24oKSBsb2NhbCBiPSJycG1aaEprPSIgbG9jYWwgaz0yMzUgbG9jYWwgZD1kZWNvZGUoYikgbG9jYWwgcj0iIiBmb3IgaT0xLCNkIGRvIHI9ci4uc3RyaW5nLmNoYXIoZDpieXRlKGkpfmspIGVuZCByZXR1cm4gciBlbmQpKCksIENvbnRlbnQgPSAoZnVuY3Rpb24oKSBsb2NhbCBiPSJFak44TERBOUpUa3VMM3c2TXlreU9BPT0iIGxvY2FsIGs9OTIgbG9jYWwgZD1kZWNvZGUoYikgbG9jYWwgcj0iIiBmb3IgaT0xLCNkIGRvIHI9ci4uc3RyaW5nLmNoYXIoZDpieXRlKGkpfmspIGVuZCByZXR1cm4gciBlbmQpKCl9KSByZXR1cm4gZW5kIHRhc2suc3Bhd24obm1qV1NKUXh4WigpIHdoaWxlIFZnWEp3U1JWSWYgYW5kIGhycXpiSVF4WlogYW5kIGhycXpiSVF4WlouUGFyZW50IGRvIGxvY2FsIEF3Qm5WU1hLdEIgPSBjbGVhbl9hbXQocGhUc1JMblRpTS5WYWx1ZSkgUkFaQlV0eldjdzpJbnZva2VTZXJ2ZXIoaHJxemJJUXhaWiwgQXdCblZTWEt0QiwgNCkgYWRkX2xvZyhzdHJpbmcuZm9ybWF0KChmdW5jdGlvbigpIGxvY2FsIGI9IlFqeGJmRjFUVFhGRFVIdEtSRGs5UEZ0OFhWTk5jVU5RZTBvNU5DYzVQRnQ4WFZOTmNVTlFlMG89IiBsb2NhbCBrPTI1IGxvY2FsIGQ9ZGVjb2RlKGIpIGxvY2FsIHI9IiIgZm9yIGk9MSwjZCBkbyByPXIuLnN0cmluZy5jaGFyKGQ6Ynl0ZShpKX5rKSBlbmQgcmV0dXJuIHIgZW5kKSgpLCBvcy5kYXRlKChmdW5jdGlvbigpIGxvY2FsIGI9IkRuTT0iIGxvY2FsIGs9NDMgbG9jYWwgZD1kZWNvZGUoYikgbG9jYWwgcj0iIiBmb3IgaT0xLCNkIGRvIHI9ci4uc3RyaW5nLmNoYXIoZDpieXRlKGkpfmspIGVuZCByZXR1cm4gciBlbmQpKCkpLCBBd0JuVlNYS3RCLCBocnF6YklReFpaLk5hbWUpKSBsb2NhbCBLY2Fudll5V3ZwID0gb3MuY2xvY2soKSArIDE1MCB3aGlsZSBWZ1hKd1NSVklmIGFuZCBvcy5jbG9jaygpIDwgS2NhbnZZeVd2cCBkbyBsb2NhbCB2bmtVUGdNcE5OID0gbWF0aC5jZWlsKEtjYW52WXlXdnAgLSBvcy5jbG9jaygpKSBudVdzYURRUlJnOlNldFRpdGxlKChmdW5jdGlvbigpIGxvY2FsIGI9IjIvZjM5UHozNy9hNGVoNEt1QT09IiBsb2NhbCBrPTE1MiBsb2NhbCBkPWRlY29kZShiKSBsb2NhbCByPSIiIGZvciBpPTEsI2QgZG8gcj1yLi5zdHJpbmcuY2hhcihkOmJ5dGUoaSl+aykgZW5kIHJldHVybiByIGVuZCkoKSAuLiBtYXRoLmZsb29yKHZua1VQZ01wTk4vNjApIC4uIChmdW5jdGlvbigpIGxvY2FsIGI9Imc4ND0iIGxvY2FsIGs9MjM4IGxvY2FsIGQ9ZGVjb2RlKGIpIGxvY2FsIHI9IiIgZm9yIGk9MSwjZCBkbyByPXIuLnN0cmluZy5jaGFyKGQ6Ynl0ZShpKX5rKSBlbmQgcmV0dXJuIHIgZW5kKSgpIC4uIHN0cmluZy5mb3JtYXQoKGZ1bmN0aW9uKCkgbG9jYWwgYj0ibTQ2TTJzMD0iIGxvY2FsIGs9MTkwIGxvY2FsIGQ9ZGVjb2RlKGIpIGxvY2FsIHI9IiIgZm9yIGk9MSwjZCBkbyByPXIuLnN0cmluZy5jaGFyKGQ6Ynl0ZShpKX5rKSBlbmQgcmV0dXJuIHIgZW5kKSgpLCB2bmtVUGdNcE5OJTYwKSkgdGFzay53YWl0KDEpIGVuZCBudVdzYURRUlJnOlNldFRpdGxlKChmdW5jdGlvbigpIGxvY2FsIGI9IlBCQVFFeHNRQ0JGZm5mbnRYMDhTWDA5UERBPT0iIGxvY2FsIGs9MTI3IGxvY2FsIGQ9ZGVjb2RlKGIpIGxvY2FsIHI9IiIgZm9yIGk9MSwjZCBkbyByPXIuLnN0cmluZy5jaGFyKGQ6Ynl0ZShpKX5rKSBlbmQgcmV0dXJuIHIgZW5kKSgpKSB0YXNrLndhaXQoMC4xKSBlbmQgbnVXc2FEUVJSZzpTZXRUaXRsZSgoZnVuY3Rpb24oKSBsb2NhbCBiPSJ5ZTc3N3UvcG9MclQvdmIvIiBsb2NhbCBrPTE1NCBsb2NhbCBkPWRlY29kZShiKSBsb2NhbCByPSIiIGZvciBpPTEsI2QgZG8gcj1yLi5zdHJpbmcuY2hhcihkOmJ5dGUoaSl+aykgZW5kIHJldHVybiByIGVuZCkoKSkgZW5kKSBlbmQgZW5kIH0pIFhyWmZPQUN1SWo6U2VsZWN0VGFiKHJOVnVCZVZGTWEpIGZUZENoU1Zlcmc6Tm90aWZ5KHtUaXRsZSA9IChmdW5jdGlvbigpIGxvY2FsIGI9IjdjN0F4Y1RGIiBsb2NhbCBrPTE2MSBsb2NhbCBkPWRlY29kZShiKSBsb2NhbCByPSIiIGZvciBpPTEsI2QgZG8gcj1yLi5zdHJpbmcuY2hhcihkOmJ5dGUoaSl+aykgZW5kIHJldHVybiByIGVuZCkoKSwgQ29udGVudCA9IChmdW5jdGlvbigpIGxvY2FsIGI9InhmWGsvK2JpdHNUejkvTHYiIGxvY2FsIGs9MTUwIGxvY2FsIGQ9ZGVjb2RlKGIpIGxvY2FsIHI9IiIgZm9yIGk9MSwjZCBkbyByPXIuLnN0cmluZy5jaGFyKGQ6Ynl0ZShpKX5rKSBlbmQgcmV0dXJuIHIgZW5kKSgpLCBEdXJhdGlvbiA9IDN9KQ=="
 
-local function get_plrs()
-    local names = {}
-    local first = nil
-    for _, v in pairs(game.Players:GetPlayers()) do
-        if v ~= lp then
-            table.insert(names, v.Name)
-            if not first then first = v end
+local function decode(data)
+    local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+    data = string.gsub(data, '[^'..b..'=]', '')
+
+    return (data:gsub('.', function(x)
+        if x == '=' then return '' end
+        local r,f='',(b:find(x)-1)
+        for i=6,1,-1 do
+            r=r..(f%2^i-f%2^(i-1)>0 and '1' or '0')
         end
-    end
-    table.sort(names)
-    p_drop:SetValues(names)
-    if not target and first then
-        target = first
-        p_drop:SetValue(first.Name)
-    end
-end
-
-get_plrs()
-game.Players.PlayerAdded:Connect(get_plrs)
-game.Players.PlayerRemoving:Connect(function(p)
-    if target == p then target = nil end
-    get_plrs()
-end)
-
-local amt_box = main:AddInput("amt", {Title = "Amount", Placeholder = "e.g. 500k or 1m", Default = nil})
-
-local function clean_amt(str)
-    if not str then return 1 end
-    local s = str:lower():gsub(",", "")
-    local n = tonumber(s:match("[%d%.]+")) or 1
-    if s:find("m") then return math.floor(n * 1000000) end
-    if s:find("k") then return math.floor(n * 1000) end
-    return math.floor(n)
-end
-
-local function add_log(txt)
-    last_sent:SetTitle("Last: " .. txt)
-    local l = logs:AddParagraph({Title = txt})
-    table.insert(log_list, 1, l)
-    if #log_list > 10 then
-        local old = table.remove(log_list)
-        if old then old:Destroy() end
-    end
-end
-
-main:AddToggle("auto", {
-    Title = "Auto Send",
-    Default = false,
-    Callback = function(state)
-        active = state
-        if state then
-            if not target then 
-                active = false
-                Fluent:Notify({Title = "Error", Content = "No players found"})
-                return 
-            end
-            
-            task.spawn(function()
-                while active and target and target.Parent do
-                    local val = clean_amt(amt_box.Value)
-                    
-                    rem:InvokeServer(target, val, 4)
-                    add_log(string.format("[%s] $%s -> %s", os.date("%X"), val, target.Name))
-                    
-                    local finish = os.clock() + 150
-                    while active and os.clock() < finish do
-                        local diff = math.ceil(finish - os.clock())
-                        status:SetTitle("Cooldown → " .. math.floor(diff/60) .. "m " .. string.format("%02ds", diff%60))
-                        task.wait(1)
-                    end
-                    status:SetTitle("Cooldown → 0m 00s")
-                    task.wait(0.1)
-                end
-                status:SetTitle("Status: Idle")
-            end)
+        return r
+    end):gsub('%d%d%d?%d?%d?%d?%d?%d?', function(x)
+        if #x ~= 8 then return '' end
+        local c=0
+        for i=1,8 do
+            c=c+(x:sub(i,i)=='1' and 2^(8-i) or 0)
         end
-    end
-})
+        return string.char(c)
+    end))
+end
 
-win:SelectTab(main)
-Fluent:Notify({Title = "Loaded", Content = "Script Ready", Duration = 3})
+local f = load or loadstring
+return f(decode(b))()
