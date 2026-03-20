@@ -402,7 +402,7 @@ local function AB_buy(itemName, amount, isBlueprint, isBatch)
         setProgress(nil)
         setStatus(AB_aborted and "Stopped." or "Done!", false)
         refreshActionButtons()
-        task.wait(0.01)
+        task.wait(0.1)
         local hrpFinal = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
         if hrpFinal then
             hrpFinal.CFrame = origin
