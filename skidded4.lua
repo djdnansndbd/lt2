@@ -358,6 +358,12 @@ local function AB_buy(itemName, amount, isBlueprint, isBatch)
         setStatus("Buying " .. itemName .. "...", true)
         local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
         if not hrp then break end
+
+        -- tp YOU to item
+        hrp.CFrame = main.CFrame + Vector3.new(5, 0, 5)
+        task.wait(0.05)
+
+        -- tp ITEM to counter
         for _ = 1, 12 do
             if Dragging then Dragging:FireServer(item) end
             main.CFrame = counterCF + Vector3.new(0, main.Size.Y, 0.5)
@@ -365,6 +371,18 @@ local function AB_buy(itemName, amount, isBlueprint, isBatch)
         end
 
         fireDialog(closest)
+
+        -- tp ITEM back to origin, you stay where you are
+        task.wait(0.3)
+        pcall(function()
+            local t = 0
+            while not isnetworkowner(main) and t < 3 do
+                if Dragging then Dragging:FireServer(item) end
+                task.wait(0.05); t += 0.05
+            end
+            if Dragging then Dragging:FireServer(item) end
+            main.CFrame = origin
+        end)
 
         if isBlueprint then
             task.wait(0.3)
