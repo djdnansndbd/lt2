@@ -363,8 +363,6 @@ local function AB_buy(itemName, amount, isBlueprint, isBatch)
             main.CFrame = counterCF + Vector3.new(0, main.Size.Y, 0.5)
             task.wait(0.016)
         end
-        hrp.CFrame = counterCF + Vector3.new(5, 0, 5)
-        task.wait(0.05)
 
         fireDialog(closest)
 
