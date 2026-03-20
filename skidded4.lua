@@ -314,7 +314,7 @@ local function AB_buy(itemName, amount, isBlueprint, isBatch)
         local found    = findShopItem()
         while not found and tick() < deadline do
             if AB_aborted then return nil end
-            task.wait(0.03)
+            task.wait(0.05)
             found = findShopItem()
         end
         return found
@@ -361,10 +361,10 @@ local function AB_buy(itemName, amount, isBlueprint, isBatch)
 
         -- tp YOU to item
         hrp.CFrame = main.CFrame + Vector3.new(5, 0, 5)
-        task.wait(0.016)
+        task.wait(0.03)
 
         -- tp ITEM to counter
-        for _ = 1, 4 do
+        for _ = 1, 6 do
             if Dragging then Dragging:FireServer(item) end
             main.CFrame = counterCF + Vector3.new(0, main.Size.Y, 0.5)
             task.wait(0.016)
@@ -373,23 +373,23 @@ local function AB_buy(itemName, amount, isBlueprint, isBatch)
         fireDialog(closest)
 
         -- tp ITEM back to origin, you stay
-        task.wait(0.1)
+        task.wait(0.15)
         pcall(function()
             local t = 0
-            while not isnetworkowner(main) and t < 1 do
+            while not isnetworkowner(main) and t < 2 do
                 if Dragging then Dragging:FireServer(item) end
-                task.wait(0.016); t += 0.016
+                task.wait(0.05); t += 0.05
             end
             if Dragging then Dragging:FireServer(item) end
             main.CFrame = origin
         end)
 
         if isBlueprint then
-            task.wait(0.1)
+            task.wait(0.2)
             openBoxFor(itemName, nil)
         end
 
-        task.wait(0.05)
+        task.wait(0.1)
 
         if not isBatch then
             setProgress(i, amount)
@@ -402,6 +402,7 @@ local function AB_buy(itemName, amount, isBlueprint, isBatch)
         setProgress(nil)
         setStatus(AB_aborted and "Stopped." or "Done!", false)
         refreshActionButtons()
+        -- tp YOU back to origin when done
         task.wait(0.1)
         local hrpFinal = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
         if hrpFinal then
