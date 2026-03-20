@@ -373,7 +373,7 @@ local function AB_buy(itemName, amount, isBlueprint, isBatch)
         fireDialog(closest)
 
         -- tp ITEM back to origin, you stay
-        task.wait(0.01)
+        task.wait(0.1)
         pcall(function()
             local t = 0
             while not isnetworkowner(main) and t < 1 do
