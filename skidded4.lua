@@ -314,7 +314,7 @@ local function AB_buy(itemName, amount, isBlueprint, isBatch)
         local found    = findShopItem()
         while not found and tick() < deadline do
             if AB_aborted then return nil end
-            task.wait(0.05) -- faster polling
+            task.wait(0.03)
             found = findShopItem()
         end
         return found
@@ -361,35 +361,21 @@ local function AB_buy(itemName, amount, isBlueprint, isBatch)
 
         -- tp YOU to item
         hrp.CFrame = main.CFrame + Vector3.new(5, 0, 5)
-        task.wait(0.03) -- faster
 
-        -- tp ITEM to counter (fewer iterations, faster)
-        for _ = 1, 6 do
-            if Dragging then Dragging:FireServer(item) end
-            main.CFrame = counterCF + Vector3.new(0, main.Size.Y, 0.5)
-            task.wait(0.016)
-        end
+        -- instantly snap item to counter and fire
+        if Dragging then Dragging:FireServer(item) end
+        main.CFrame = counterCF + Vector3.new(0, main.Size.Y, 0.5)
 
         fireDialog(closest)
 
-        -- tp ITEM back to origin, you stay
-        task.wait(0.15) -- faster
-        pcall(function()
-            local t = 0
-            while not isnetworkowner(main) and t < 2 do -- shorter timeout
-                if Dragging then Dragging:FireServer(item) end
-                task.wait(0.05); t += 0.05
-            end
-            if Dragging then Dragging:FireServer(item) end
-            main.CFrame = origin
-        end)
+        -- tp ITEM back to origin instantly
+        if Dragging then Dragging:FireServer(item) end
+        main.CFrame = origin
 
         if isBlueprint then
-            task.wait(0.2) -- faster
+            task.wait(0.1)
             openBoxFor(itemName, nil)
         end
-
-        task.wait(0.1) -- faster
 
         if not isBatch then
             setProgress(i, amount)
@@ -401,10 +387,12 @@ local function AB_buy(itemName, amount, isBlueprint, isBatch)
         AB_buying = false
         setProgress(nil)
         setStatus(AB_aborted and "Stopped." or "Done!", false)
-        -- tp YOU back to origin when done
-        local hrpFinal = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-        if hrpFinal then hrpFinal.CFrame = origin end
         refreshActionButtons()
+        task.wait(0.1)
+        local hrpFinal = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+        if hrpFinal then
+            hrpFinal.CFrame = origin
+        end
     end
 end
 
