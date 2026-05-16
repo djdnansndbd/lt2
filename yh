@@ -1,0 +1,520 @@
+if getgenv().SlimeRNG_Unload then
+    pcall(getgenv().SlimeRNG_Unload)
+end
+
+local isUnloaded = false
+getgenv().SlimeRNG_Unload = function()
+    isUnloaded = true
+    local parent = game:GetService("RunService"):IsStudio() and game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui") or (gethui and gethui()) or game:GetService("CoreGui")
+    for _, gui in ipairs(parent:GetChildren()) do
+        if gui:IsA("ScreenGui") and gui:FindFirstChild("Notifications") and gui:FindFirstChild("Base") then
+            local titleLabel = gui.Base:FindFirstChild("Title", true)
+            if titleLabel and titleLabel.Text == "Slime RNG" then
+                gui:Destroy()
+            end
+        end
+    end
+end
+
+repeat task.wait() until game:IsLoaded()
+
+local queue_on_teleport = queue_on_teleport or (syn and syn.queue_on_teleport) or function() end
+queue_on_teleport('loadstring(game:HttpGet("https://raw.githubusercontent.com/djdnansndbd/lt2/refs/heads/main/a.lua"))()')
+
+local MacLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/djdnansndbd/lt2/refs/heads/main/lib"))()
+local players = game:GetService("Players")
+local GuiService = game:GetService("GuiService")
+local HttpService = game:GetService("HttpService")
+local UserInputService = game:GetService("UserInputService")
+local VirtualUser = game:GetService("VirtualUser")
+local localPlayer = players.LocalPlayer
+local client = workspace:FindFirstChild(localPlayer.Name)
+local clientHRP = client.HumanoidRootPart
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local playerDataClient = require(ReplicatedStorage.Packages.DataService).client
+local UpgradeTree = require(ReplicatedStorage.Source.Features.Upgrades.UpgradeTree)
+local UpgradeUtils = require(ReplicatedStorage.Source.Features.Upgrades.UpgradeServiceUtils)
+local BuyUpgrade = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("leifstout_networker@0.3.1"):WaitForChild("networker"):WaitForChild("_remotes"):WaitForChild("UpgradeService"):WaitForChild("RemoteFunction")
+
+-- Stats tracking
+local Stats = {
+    TotalRolls = 0,
+    StartTime = tick()
+}
+
+
+
+local Window = MacLib:Window({
+    Title = "Slime RNG",
+    Subtitle = "je7p",
+    Size = UDim2.fromOffset(868, 650),
+    DragStyle = 1,
+    DisabledWindowControls = {},
+    ShowUserInfo = true,
+    Keybind = Enum.KeyCode.RightControl,
+    AcrylicBlur = true,
+})
+
+local TabGroups = {
+    Main = Window:TabGroup()
+}
+
+local Tabs = {
+    Main = TabGroups.Main:Tab({ Name = "Main", Image = "rbxassetid://18821914323" }),
+    Stats = TabGroups.Main:Tab({ Name = "Stats", Image = "rbxassetid://13840742516" }),
+    Upgrades = TabGroups.Main:Tab({ Name = "Upgrades", Image = "rbxassetid://10734950309" }),
+    Rewards = TabGroups.Main:Tab({ Name = "Rewards", Image = "rbxassetid://12112224757" }),
+    Webhooks = TabGroups.Main:Tab({ Name = "Webhooks", Image = "rbxassetid://12112224757" }),
+    Settings = TabGroups.Main:Tab({ Name = "Settings", Image = "rbxassetid://10734950309" })
+}
+
+local Sections = {
+    MainLeft = Tabs.Main:Section({ Side = "Left" }),
+    MainRight = Tabs.Main:Section({ Side = "Right" }),
+    StatsLeft = Tabs.Stats:Section({ Side = "Left" }),
+    UpgradesLeft = Tabs.Upgrades:Section({ Side = "Left" }),
+    UpgradesRight = Tabs.Upgrades:Section({ Side = "Right" }),
+    Rewards = Tabs.Rewards:Section({ Side = "Left" }),
+    Webhooks = Tabs.Webhooks:Section({ Side = "Left" }),
+    Settings = Tabs.Settings:Section({ Side = "Left" })
+}
+
+function Notify(title, description)
+    Window:Notify({
+        Title = title,
+        Description = description,
+        Lifetime = 5
+    })
+end
+
+-- Roll function with stats
+function Roll()
+    local args = { "requestRoll" }
+    local result = game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("leifstout_networker@0.3.1"):WaitForChild("networker"):WaitForChild("_remotes"):WaitForChild("RollService"):WaitForChild("RemoteFunction"):InvokeServer(unpack(args))
+    
+    Stats.TotalRolls = Stats.TotalRolls + 1
+    
+    return result
+end
+
+-- Stats UI Updates
+local RollsLabel = Sections.StatsLeft:Label({ Text = "🎲 Total Rolls: 0" })
+local TimeLabel = Sections.StatsLeft:Label({ Text = "⏱️ Session Time: 0s" })
+local RPMLabel = Sections.StatsLeft:Label({ Text = "⚡ Rolls Per Minute: 0" })
+
+task.spawn(function()
+    while task.wait(1) and not isUnloaded do
+        local elapsed = tick() - Stats.StartTime
+        local rpm = math.round((Stats.TotalRolls / (elapsed / 60)) * 10) / 10
+        
+        RollsLabel:UpdateName("🎲 Total Rolls: " .. tostring(Stats.TotalRolls))
+        TimeLabel:UpdateName("⏱️ Session Time: " .. math.floor(elapsed) .. "s")
+        RPMLabel:UpdateName("⚡ Rolls Per Minute: " .. tostring(rpm))
+    end
+end)
+
+-- Codes logic
+local ActiveCodes = {
+    "sliming",
+    "goingBananas",
+    "test",
+    "gullible",
+    "AAisComing"
+}
+
+Sections.Rewards:Header({ Name = "Redeem Codes" })
+Sections.Rewards:Button({
+    Name = "Redeem All Active Codes",
+    Callback = function()
+        Notify("Rewards", "Starting code redemption...")
+        local CodeRemote = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("leifstout_networker@0.3.1"):WaitForChild("networker"):WaitForChild("_remotes"):FindFirstChild("CodeService") or 
+                          ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("leifstout_networker@0.3.1"):WaitForChild("networker"):WaitForChild("_remotes"):FindFirstChild("RedeemService")
+        
+        if CodeRemote then
+            for _, code in ipairs(ActiveCodes) do
+                pcall(function()
+                    CodeRemote.RemoteFunction:InvokeServer("redeem", code)
+                end)
+                task.wait(0.5)
+            end
+            Notify("Rewards", "Redemption process finished!")
+        else
+            Notify("Error", "Code service not found. Try redeeming manually.")
+        end
+    end
+})
+
+-- Rest of the logic (Main, Upgrades, Webhooks)
+Sections.MainLeft:Header({ Name = "Automation" })
+
+Sections.MainLeft:Toggle({
+    Name = "Auto Roll",
+    Default = false,
+    Callback = function(value)
+        Notify("Auto Roll", value and "Enabled" or "Disabled")
+        task.spawn(function()
+            while MacLib.Options.AutoRoll:GetState() and not isUnloaded do
+                local rollSpeedText = game:GetService("Players").LocalPlayer.PlayerGui.Root.BottomBarStats.StatsList.RollSpeedStat.Content.Value.TextLabel.Text
+                local speed = tonumber(string.match(rollSpeedText, "[%d%.]+")) or 1
+                task.wait(speed)
+                Roll()
+            end
+        end)
+    end
+}, "AutoRoll")
+
+Sections.MainLeft:Toggle({
+    Name = "Auto Index",
+    Default = false,
+    Callback = function(value)
+        Notify("Auto Index", value and "Enabled" or "Disabled")
+        task.spawn(function()
+            while MacLib.Options.AutoIndex:GetState() and not isUnloaded do
+                task.wait(30)
+                ClaimIndex()
+            end
+        end)
+    end
+}, "AutoIndex")
+
+local LootRemote = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("leifstout_networker@0.3.1"):WaitForChild("networker"):WaitForChild("_remotes"):WaitForChild("LootService"):WaitForChild("RemoteFunction")
+local autoCollectFruitConn = nil
+
+Sections.MainLeft:Toggle({
+    Name = "Auto Collect Fruit",
+    Default = false,
+    Callback = function(value)
+        Notify("Auto Collect Fruit", value and "Enabled" or "Disabled")
+        if value then
+            for _, loot in pairs(workspace.Loot:GetChildren()) do
+                pcall(function() LootRemote:InvokeServer("requestCollect", loot.Name) end)
+                if loot:FindFirstChild("Root") then
+                    loot.Root.CFrame = CFrame.new(clientHRP.CFrame.X, clientHRP.CFrame.Y, clientHRP.CFrame.Z)
+                end
+            end
+            autoCollectFruitConn = workspace.Loot.ChildAdded:Connect(function(loot)
+                pcall(function() LootRemote:InvokeServer("requestCollect", loot.Name) end)
+                if loot:FindFirstChild("Root") then
+                    loot.Root.CFrame = CFrame.new(clientHRP.CFrame.X, clientHRP.CFrame.Y, clientHRP.CFrame.Z)
+                end
+            end)
+        else
+            if autoCollectFruitConn then
+                autoCollectFruitConn:Disconnect()
+                autoCollectFruitConn = nil
+            end
+        end
+    end
+}, "AutoCollectFruit")
+
+Sections.MainRight:Header({ Name = "Miscellaneous" })
+
+local antiAfkConn = nil
+Sections.MainRight:Toggle({
+    Name = "Anti AFK",
+    Default = true,
+    Callback = function(value)
+        Notify("Anti AFK", value and "Enabled" or "Disabled")
+        if value then
+            antiAfkConn = localPlayer.Idled:Connect(function()
+                VirtualUser:CaptureController()
+                VirtualUser:ClickButton2(Vector2.new())
+            end)
+            task.spawn(function()
+                while MacLib.Options.AntiAFK:GetState() and not isUnloaded do
+                    task.wait(300)
+                    if localPlayer.Character and localPlayer.Character:FindFirstChild("Humanoid") then
+                        localPlayer.Character.Humanoid.Jump = true
+                    end
+                end
+            end)
+        else
+            if antiAfkConn then
+                antiAfkConn:Disconnect()
+                antiAfkConn = nil
+            end
+        end
+    end
+}, "AntiAFK")
+
+function TeleportBestZone()
+    local zones = workspace.Zones:GetChildren()
+    local returnZones = {}
+    for _, zone in pairs(zones) do
+        local blockerName = "ClientGateBlocker_" .. zone.Name
+        local gate = zone.Gate:FindFirstChild(blockerName)
+        if gate then table.insert(returnZones, gate) end
+    end
+    local counter = 0
+    for _, gateBlocker in pairs(returnZones) do
+        if gateBlocker.CanCollide ~= true then
+            if tonumber(gateBlocker.Parent.Parent.Name) > counter then
+                counter = tonumber(gateBlocker.Parent.Parent.Name)
+            end
+        end
+    end
+    counter = counter + 1
+    local args = { "requestTeleportZone", counter }
+    game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("leifstout_networker@0.3.1"):WaitForChild("networker"):WaitForChild("_remotes"):WaitForChild("ZonesService"):WaitForChild("RemoteFunction"):InvokeServer(unpack(args))
+end
+
+function ClaimIndex()
+    local rewards = { "basic", "big", "huge", "shiny", "inverted" }
+    for _, reward in ipairs(rewards) do
+        local args = { "requestClaimReward", reward }
+        game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("leifstout_networker@0.3.1"):WaitForChild("networker"):WaitForChild("_remotes"):WaitForChild("IndexService"):WaitForChild("RemoteFunction"):InvokeServer(unpack(args))
+        task.wait(0.1)
+    end
+end
+
+function ConsumePotions()
+    local boosts = { "luck", "ultraLuck", "currency", "rollSpeed" }
+    for _, boost in ipairs(boosts) do
+        local args = { "requestUseBoost", boost }
+        game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("leifstout_networker@0.3.1"):WaitForChild("networker"):WaitForChild("_remotes"):WaitForChild("BoostService"):WaitForChild("RemoteFunction"):InvokeServer(unpack(args))
+    end
+end
+
+Sections.MainRight:Toggle({
+    Name = "Auto Best Zone",
+    Default = false,
+    Callback = function(value)
+        Notify("Auto Best Zone", value and "Enabled" or "Disabled")
+        task.spawn(function()
+            while MacLib.Options.AutoTeleportBestZone:GetState() and not isUnloaded do
+                TeleportBestZone()
+                task.wait(tonumber(MacLib.Options.AutoBestZoneInterval:GetInput()) or 30)
+            end
+        end)
+    end
+}, "AutoTeleportBestZone")
+
+Sections.MainRight:Input({
+    Name = "Best Zone Interval",
+    Default = "30",
+    Placeholder = "Seconds",
+    AcceptedCharacters = "Numeric",
+    Callback = function() end
+}, "AutoBestZoneInterval")
+
+Sections.MainRight:Toggle({
+    Name = "Auto Potions",
+    Default = false,
+    Callback = function(value)
+        Notify("Auto Potions", value and "Enabled" or "Disabled")
+        task.spawn(function()
+            while MacLib.Options.AutoPotions:GetState() and not isUnloaded do
+                ConsumePotions()
+                task.wait(3)
+            end
+        end)
+    end
+}, "AutoPotions")
+
+local SlimeGunRemote = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("leifstout_networker@0.3.1"):WaitForChild("networker"):WaitForChild("_remotes"):WaitForChild("SlimeGunService"):WaitForChild("RemoteFunction")
+
+Sections.MainRight:Toggle({
+    Name = "Auto Slime Gun",
+    Default = false,
+    Callback = function(value)
+        Notify("Auto Slime Gun", value and "Enabled" or "Disabled")
+        task.spawn(function()
+            while MacLib.Options.AutoSlimeGun:GetState() and not isUnloaded do
+                pcall(function()
+                    local enemies = workspace:FindFirstChild("Gameplay185")
+                    if enemies then
+                        enemies = enemies:FindFirstChild("Enemies")
+                        if enemies then
+                            for _, enemy in pairs(enemies:GetChildren()) do
+                                SlimeGunRemote:InvokeServer("tryFireSlimeGun", tonumber(enemy.Name))
+                            end
+                        end
+                    end
+                end)
+                task.wait(0.01)
+            end
+        end)
+    end
+}, "AutoSlimeGun")
+
+local autoFriendConn = nil
+
+local function sendFriendRequest(player)
+    if player ~= localPlayer and not localPlayer:IsFriendsWith(player.UserId) then
+        local success, errorMessage = pcall(function()
+            localPlayer:RequestFriendship(player)
+        end)
+        
+        if success then
+            Notify("Friend Request", "Sent to " .. player.Name)
+        else
+            Notify("Error", "Failed to send request to " .. player.Name)
+        end
+        
+        task.wait(0.5)
+    end
+end
+
+Sections.MainRight:Toggle({
+    Name = "Auto Friend Request",
+    Default = false,
+    Callback = function(value)
+        Notify("Auto Friend Request", value and "Enabled" or "Disabled")
+        if value then
+            task.spawn(function()
+                for _, player in pairs(players:GetPlayers()) do
+                    if not MacLib.Options.AutoFriendRequest:GetState() then break end
+                    sendFriendRequest(player)
+                end
+            end)
+            autoFriendConn = players.PlayerAdded:Connect(function(player)
+                task.wait(5)
+                if MacLib.Options.AutoFriendRequest:GetState() then
+                    sendFriendRequest(player)
+                end
+            end)
+        else
+            if autoFriendConn then
+                autoFriendConn:Disconnect()
+                autoFriendConn = nil
+            end
+        end
+    end
+}, "AutoFriendRequest")
+
+-- Upgrades
+Sections.UpgradesLeft:Header({ Name = "Upgrades Automation" })
+Sections.UpgradesLeft:Toggle({
+    Name = "Auto Buy Upgrades",
+    Default = false,
+    Callback = function(value)
+        Notify("Auto Buy Upgrades", value and "Enabled" or "Disabled")
+        task.spawn(function()
+            while MacLib.Options.AutoBuyUpgrades:GetState() and not isUnloaded do
+                pcall(function()
+                    for _, Upgrades in next, UpgradeTree do
+                        for _, Tiles in next, Upgrades do
+                            if Tiles.cost and not UpgradeUtils.ownsUpgrade(Tiles.id, playerDataClient:get("upgrades") or {}) and (playerDataClient:get()[Tiles.cost.currency] or 0) >= Tiles.cost.amount then
+                                BuyUpgrade:InvokeServer("requestUnlock", Tiles.id)
+                                task.wait(0.001)
+                            end
+                        end
+                    end
+                end)
+                task.wait(0.01)
+            end
+        end)
+    end
+}, "AutoBuyUpgrades")
+
+Sections.UpgradesLeft:Toggle({
+    Name = "Auto Buy Zone",
+    Default = false,
+    Callback = function(value)
+        Notify("Auto Buy Zone", value and "Enabled" or "Disabled")
+        task.spawn(function()
+            while MacLib.Options.AutoBuyZone:GetState() and not isUnloaded do
+                game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("leifstout_networker@0.3.1"):WaitForChild("networker"):WaitForChild("_remotes"):WaitForChild("ZonesService"):WaitForChild("RemoteFunction"):InvokeServer("requestPurchaseZone")
+                task.wait(5)
+            end
+        end)
+    end
+}, "AutoBuyZone")
+
+Sections.UpgradesRight:Header({ Name = "Rebirth & Inventory" })
+Sections.UpgradesRight:Toggle({
+    Name = "Auto Rebirth",
+    Default = false,
+    Callback = function(value)
+        Notify("Auto Rebirth", value and "Enabled" or "Disabled")
+        task.spawn(function()
+            while MacLib.Options.AutoRebirth:GetState() and not isUnloaded do
+                game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("leifstout_networker@0.3.1"):WaitForChild("networker"):WaitForChild("_remotes"):WaitForChild("RebirthService"):WaitForChild("RemoteFunction"):InvokeServer("requestRebirth")
+                task.wait(5)
+            end
+        end)
+    end
+}, "AutoRebirth")
+
+Sections.UpgradesRight:Toggle({
+    Name = "Auto Equip Best",
+    Default = false,
+    Callback = function(value)
+        Notify("Auto Equip Best", value and "Enabled" or "Disabled")
+        task.spawn(function()
+            while MacLib.Options.AutoEquipBest:GetState() and not isUnloaded do
+                game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("leifstout_networker@0.3.1"):WaitForChild("networker"):WaitForChild("_remotes"):WaitForChild("InventoryService"):WaitForChild("RemoteFunction"):InvokeServer("requestEquipBest")
+                task.wait(10)
+            end
+        end)
+    end
+}, "AutoEquipBest")
+
+-- Webhooks
+Sections.Webhooks:Header({ Name = "Discord Integration" })
+Sections.Webhooks:Input({
+    Name = "Webhook URL",
+    Default = "",
+    Placeholder = "Enter URL here",
+    AcceptedCharacters = "All",
+    Callback = function() end
+}, "WebhookUrl")
+
+Sections.Webhooks:Input({
+    Name = "Webhook Interval",
+    Default = "30",
+    Placeholder = "Seconds",
+    AcceptedCharacters = "Numeric",
+    Callback = function() end
+}, "WebhookInterval")
+
+Sections.Webhooks:Toggle({
+    Name = "Enabled",
+    Default = false,
+    Callback = function(value)
+        Notify("Webhook", value and "Enabled" or "Disabled")
+        task.spawn(function()
+            while MacLib.Options.Webhook:GetState() and not isUnloaded do
+                local url = MacLib.Options.WebhookUrl:GetInput()
+                if url and url ~= "" then
+                    local rollsText = "0"
+                    pcall(function() rollsText = workspace:FindFirstChild(localPlayer.Name).HumanoidRootPart.TitleGui.NumRolls.Text end)
+                    request({
+                        Url = url,
+                        Method = "POST",
+                        Headers = { ["Content-Type"] = "application/json" },
+                        Body = HttpService:JSONEncode({
+                            embeds = {{ title = localPlayer.Name, description = "Rolls: " .. rollsText, color = 5814783, timestamp = DateTime.now():ToIsoDate() }}
+                        })
+                    })
+                end
+                task.wait(tonumber(MacLib.Options.WebhookInterval:GetInput()) or 30)
+            end
+        end)
+    end
+}, "Webhook")
+
+-- Settings
+Sections.Settings:Header({ Name = "Information" })
+Sections.Settings:Button({
+    Name = "Copy Discord Link",
+    Callback = function()
+        setclipboard("https://discord.gg/cuz")
+        Notify("Discord", "Link copied to clipboard")
+    end
+})
+
+Sections.Settings:Divider()
+Sections.Settings:Header({ Name = "Configurations" })
+
+MacLib:SetFolder("Plink/SRNG")
+Tabs.Settings:InsertConfigSection("Left")
+
+Window:Notify({
+    Title = "Plink Slime RNG",
+    Description = "Script successfully loaded! Press Right Control to toggle.",
+    Lifetime = 8
+})
+
+MacLib:LoadAutoLoadConfig()
