@@ -19,7 +19,7 @@ end
 repeat task.wait() until game:IsLoaded()
 
 local queue_on_teleport = queue_on_teleport or (syn and syn.queue_on_teleport) or function() end
-queue_on_teleport('loadstring(game:HttpGet("https://raw.githubusercontent.com/djdnansndbd/lt2/refs/heads/main/a.lua"))()')
+queue_on_teleport('loadstring(game:HttpGet("https://raw.githubusercontent.com/djdnansndbd/lt2/refs/heads/main/yh"))()')
 
 local MacLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/djdnansndbd/lt2/refs/heads/main/lib"))()
 local players = game:GetService("Players")
