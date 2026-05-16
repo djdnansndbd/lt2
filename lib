@@ -5622,7 +5622,7 @@ function MacLib:Demo()
 		DragStyle = 1,
 		DisabledWindowControls = {},
 		ShowUserInfo = true,
-		Keybind = Enum.KeyCode.RightControl,
+		Keybind = Enum.KeyCode.LeftControl,
 		AcrylicBlur = true,
 	})
 
